@@ -1,0 +1,70 @@
+#!/bin/sh
+# Add a peer Cnews site
+# (c) 2026, Warren Toomey, GPL3
+#
+
+# Ensure that we are running as root
+if [ `id -u` -ne 0 ]
+then echo "This script must be run as root; exiting"; exit 1
+fi
+
+# We need four arguments: hostname, IP address, TCP port, uucp password
+if [ "$#" -ne 4 ]
+then echo "Usage: $0 hostname IP_address TCP_port uucp_password"; exit 1
+fi
+
+# Get the arguments
+hostname=$1
+ip_address=$2
+tcp_port=$3
+password=$4
+
+# Check that we have our own hostname
+if [ `hostname` = 'pdp11' ]
+then echo "You need to set your own hostname in /etc/netstart and also"
+     echo "in /etc/hosts. Run /etc/netstart after editing both files".
+     exit 1
+fi
+
+# Add the hostname and IP address to the /etc/hosts file
+grep -v $hostname /etc/hosts > /tmp/$$ &&
+echo "$ip_address	$hostname" >> /tmp/$$ &&
+cat /tmp/$$ > /etc/hosts
+
+# Add the hostname to the L.sys file
+grep -v "^$hostname" /etc/uucp/L.sys > /tmp/$$ &&
+echo "$hostname Any TCP $tcp_port $hostname login: uucp assword: $password" >> /tmp/$$ &&
+cat /tmp/$$ > /etc/uucp/L.sys
+
+# Add the hostname to /etc/news/sys
+if [ ! -f /etc/news/sys ]
+then echo "No /etc/news/sys file; have you run setup_cnews?"; exit 1
+fi
+
+grep -v "^$hostname" /etc/news/sys > /tmp/$$ &&
+echo "$hostname:all/all:f:" >> /tmp/$$ &&
+cat /tmp/$$ > /etc/news/sys
+
+# Set up a cron job for the remote site.
+# Use the current seconds as a random numnber
+rand=`date | sed 's/.*://;s/ .*//'`
+grep -v $hostname /etc/crontab > /tmp/$$ &&
+echo "$rand * * * *      uucp    /usr/sbin/uucico -r1 -s$hostname" >> /tmp/$$ &&
+cat /tmp/$$ > /etc/crontab 
+
+# Make an outbound news directory for $hostname
+mkdir -p /usr/spool/news/out.going/$hostname &&
+chown news.news /usr/spool/news/out.going/$hostname
+
+# Copy this script to /etc/news/bin
+echo "Copying $0 to /etc/news/bin"
+cp $0 /etc/news/bin 2> /dev/null
+
+# Remind them to tell the other site
+myname=`hostname`
+echo "Done. If you accept inbound uucp connections, tell the"
+echo "$hostname admin to add your uucp site with their $0 script."
+echo "At least, tell the $hostname admin to add $myname to their"
+echo "/etc/news/sys and /etc/uucp/L.sys files."
+
+exit 0

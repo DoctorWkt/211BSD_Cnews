@@ -1,0 +1,78 @@
+#!/bin/sh
+#
+# Script to configure Cnews on a 2.11BSD system.
+# (c) 2026, Warren Toomey, GPL3
+#
+
+# Ensure that we are running as root
+if [ `id -u` -ne 0 ]
+then echo "This script must be run as root; exiting"; exit 1
+fi
+
+# Set our umask
+umask 022
+
+# Check that we have our own hostname
+if [ `hostname` = 'pdp11' ]
+then echo "You need to set your own hostname in /etc/netstart and also"
+     echo "in /etc/hosts. Run /etc/netstart after editing both files".
+     echo
+     echo "You can also run /tmp/set_hostname to change the hostname."
+     exit 1
+fi
+
+# Ensure that there is a news user
+grep -s '^news:' /etc/passwd
+if [ "$?" -ne 0 ]
+then echo
+     echo "You need to make a news user and news group."
+     echo "Use the vipw command and add this to the password file:"
+     echo "news:*:67:67::0:0:News System:/etc/news:/bin/csh"
+     echo
+     echo "Then edit /etc/group and add this line"
+     echo "news:*:67:"
+     exit 1
+fi
+
+# Do the same wih the /etc/group file
+grep -s '^news:' /etc/group
+if [ "$?" -ne 0 ]
+then echo
+     echo "You need to make a news group."
+     echo "Edit /etc/group and add this line"
+     echo "news:*:67:"
+     exit 1
+fi
+
+# Make the UUCP spool directories
+hostname=`hostname`
+mkdir /usr/spool/uucp/D.$hostname
+mkdir /usr/spool/uucp/D."$hostname"X
+chown uucp.daemon /usr/spool/uucp/D.$hostname /usr/spool/uucp/D."$hostname"X
+
+# Set up our name for Cnews
+hostname=`hostname`
+echo $hostname > /etc/news/mailname
+echo $hostname > /etc/news/whoami
+
+# Set up some cron jobs
+crontab -u news /etc/news/crontab
+
+# Unpack /tmp/local.tar, but first find a directory for the binaries.
+# Assume /usr/bin to start with
+localdir=/usr/bin
+
+# If we have a /usr/local/bin directory, use that
+if [ -d /usr/local/bin ]
+then localdir=/usr/local/bin
+fi
+
+# The Chase Covello image uses /usr/local, sigh
+if [ -f /usr/local/less ]
+then localdir=/usr/local
+fi
+
+echo "Unpacking /tmp/local.tar into $localdir"
+(cd $localdir; tar vxf /tmp/local.tar)
+
+exit 0

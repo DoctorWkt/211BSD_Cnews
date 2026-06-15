@@ -1,0 +1,28 @@
+#!/bin/sh
+#
+# Script to change the hostname from pdp11 to the command-line argument
+# (c) 2026, Warren Toomey, GPL3
+#
+
+# Ensure that we are running as root
+if [ `id -u` -ne 0 ]
+then echo "This script must be run as root; exiting"; exit 1
+fi
+
+# Ensure we have one argument
+if [ "$#" -ne 1 ]
+then echo "Usage: $0 new_hostname"; exit 1
+fi
+
+# Check that we have our own hostname
+if [ `hostname` = 'pdp11' ]
+then echo "About to change hostname to $1 in 5 seconds"
+     sleep 5
+     sed "s/pdp11/$1/g" /etc/hosts > /tmp/$$ && cat /tmp/$$ > /etc/hosts
+     sed "s/pdp11/$1/" /etc/netstart > /tmp/$$ && cat /tmp/$$ > /etc/netstart
+fi
+
+# Run /etc/netstart to set the new hostname
+/etc/netstart
+
+exit 0
