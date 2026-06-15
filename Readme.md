@@ -485,3 +485,29 @@ won't need to set up any home router port forwarding.
 However, the whole point of C News is that it is a distributed system,
 not a hub and spoke system. So I would highly recommend that you work
 on building news connections with peers other than _munnari_.
+
+## Notes and Errata
+
+I spent a few hours fighting a problem when I moved my _munnari_ system
+over to my Internet server: the `uucpd` daemon kept crashing when my
+_gara_ machine tried to connect to it.
+
+It seems that the `uucpd` daemon doesn't like long DNS names. My home
+router's IP address resolves to
+`cpe-58-161-102-189.lfui-cr-002.win.vic.bigpond.net.au`: this makes
+`uucpd` dump core.
+
+To solve the problem, I've installed Dnsmasq on my real machine, and I've set
+the 2.11BSD `/etc/resolv.conf` to use this as the DNS server:
+
+```
+# cat /etc/resolv.conf
+domain home.lan
+nameserver 173.230.156.51
+```
+
+And in my real machine's `/etc/hosts` file, I now have this:
+
+```
+58.161.102.189  gara.locl.net gara
+```
