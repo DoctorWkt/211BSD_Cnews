@@ -478,6 +478,10 @@ I have _munnari_ running behind a firewall, so you will need to e-mail
 me your machine's name and your public IP address so that I can let TCP
 connections in from your machine. My e-mail address is `wkt` "@" `tuhs.org`.
 
+Note that _munnari_ is __not__ going to make any TCP connections to your
+system: you will have to connect to _munnari_. This also means that you
+won't need to set up any home router port forwarding.
+
 However, the whole point of C News is that it is a distributed system,
 not a hub and spoke system. So I would highly recommend that you work
 on building news connections with peers other than _munnari_.
